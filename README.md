@@ -12,14 +12,14 @@
 
 ``` shell
 # 获取函数选择器的值,返回16进制字符串
-web3-tools getFnSelector 'adminSetClaimType(uint256,uint256)'
+web3-tools getFnSelector --funcSig "adminSetClaimType(uint256,uint256)"
 
 output:
     函数签名:                     adminSetClaimType(uint256,uint256)
     函数选择器:                   0xba1c6a10
     
 # 对字符串进行keccak256加密，返回16进制字符串
-web3-tools keccak256FromStringToHex 'some string'
+web3-tools keccak256FromStringToHex --someStr "some string"
     
 # 获取ERC20代币余额
 web3-tools  erc20Balance --rpc https://lisbon-testnet-rpc.matchtest.co  --token 0x3eE243ff68074502b1D9D65443fa97b99f634570 --wallet 0xD5f92Fd92F8c7f9391513E3019D9441aAf5b2D9E

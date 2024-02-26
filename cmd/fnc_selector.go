@@ -17,10 +17,10 @@ var getFnSelectorCmd = &cobra.Command{
 	Use:   "getFnSelector",
 	Short: "获取函数选择器,返回16进制字符串",
 	Long: `根据函数签名获取函数选择器16进制值. 例子:
-web3-tools getFnSelector 'adminSetClaimType(uint256,uint256)'`,
+web3-tools getFnSelector --funcSig adminSetClaimType(uint256,uint256)`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("%-25s%s\n", "函数签名:", " "+args[0])
-		fmt.Printf("%-25s%s\n", "函数选择器:", "0x"+strings.ToLower(hexutils.BytesToHex(crypto.Keccak256([]byte(args[0]))[:4])))
+		fmt.Printf("%-26s%s\n", "函数签名:", funcSig)
+		fmt.Printf("%-25s%s\n", "函数选择器:", "0x"+strings.ToLower(hexutils.BytesToHex(crypto.Keccak256([]byte(funcSig))[:4])))
 	},
 }
 
@@ -36,4 +36,6 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// getFnSelectorCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+	getFnSelectorCmd.PersistentFlags().StringVarP(&funcSig, "funcSig", "s", "", "方法签名")
 }

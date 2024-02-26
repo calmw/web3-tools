@@ -17,10 +17,10 @@ var keccak256FromStringToHexCmd = &cobra.Command{
 	Use:   "keccak256FromStringToHex",
 	Short: "对字符串进行keccak256加密，返回16进制字符串",
 	Long: `对字符串进行keccak256加密，返回16进制字符串. 例子:
-web3-tools keccak256FromStringToHex 'some string'`,
+web3-tools keccak256FromStringToHex --someStr "some string"`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("%-25s%s\n", "加密前:", args[0])
-		fmt.Printf("%-25s%s\n", "加密后:", "0x"+strings.ToLower(hexutils.BytesToHex(crypto.Keccak256([]byte(args[0])))))
+		fmt.Printf("%-25s%s\n", "加密前:", someStr)
+		fmt.Printf("%-25s%s\n", "加密后:", "0x"+strings.ToLower(hexutils.BytesToHex(crypto.Keccak256([]byte(someStr)))))
 	},
 }
 
@@ -36,4 +36,6 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// keccak256FromStringToHexCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+	keccak256FromStringToHexCmd.PersistentFlags().StringVarP(&someStr, "someStr", "s", "", "字符串")
 }
