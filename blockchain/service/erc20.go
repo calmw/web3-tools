@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"math"
 	"math/big"
 )
 
@@ -70,5 +71,19 @@ func (e Erc20) Approve(cli *ethclient.Client, chainId int64, priKey, spender str
 	if err != nil {
 		return nil, err
 	}
-	return e.Contract.Approve(auth, common.HexToAddress(spender), big.NewInt(amount))
+	decimals, err := e.Decimals()
+	if err != nil {
+		return nil, err
+	}
+
+	decimal := int64(math.Pow(10, float64(decimals)))
+	amountBigInt := big.NewInt(amount)
+	amountBigInt.Mul(amountBigInt, big.NewInt(decimal))
+
+	return e.Contract.Approve(auth, common.HexToAddress(spender), amountBigInt)
+}
+
+func (e Erc20) Allowance(owner, spender string) (*big.Int, error) {
+
+	return e.Contract.Allowance(nil, common.HexToAddress(owner), common.HexToAddress(spender))
 }

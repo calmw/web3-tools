@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/calmw/web3-tools/blockchain/service"
 	"github.com/spf13/cobra"
+	"strings"
 )
 
 // erc20ApproveCmd represents the erc20Approve command
@@ -24,7 +25,7 @@ web3-tools erc20Approve --key 88efa0c968693a034301450d450c7169b3f608966977a4e3b5
 			return
 		}
 		Erc20 := service.NewErc20(Cli, token)
-		fmt.Println(RPC, token, wallet, spender, privateKey, 11111)
+		privateKey = strings.TrimLeft(privateKey, "0x")
 		tx, err := Erc20.Approve(Cli, chainId, privateKey, spender, amount)
 		if err != nil {
 			fmt.Printf("错误：%s\n", err)
@@ -50,7 +51,7 @@ func init() {
 
 	erc20ApproveCmd.PersistentFlags().StringVarP(&RPC, "rpc", "r", "", "节点RPC")
 	erc20ApproveCmd.PersistentFlags().StringVarP(&token, "token", "t", "", "ERC20 合约地址")
-	erc20ApproveCmd.PersistentFlags().StringVarP(&wallet, "wallet", "w", "", "钱包地址")
+	//erc20ApproveCmd.PersistentFlags().StringVarP(&wallet, "wallet", "w", "", "钱包地址")
 	erc20ApproveCmd.PersistentFlags().Int64VarP(&chainId, "chainId", "i", 0, "链的chain ID")
 	erc20ApproveCmd.PersistentFlags().StringVarP(&privateKey, "key", "k", "", "钱包私钥")
 	erc20ApproveCmd.PersistentFlags().StringVarP(&spender, "spender", "s", "", "被授权的合约地址")

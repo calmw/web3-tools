@@ -25,7 +25,11 @@ web3-tools keccak256FromStringToHex 'some string'
 web3-tools  erc20Balance --rpc https://lisbon-testnet-rpc.matchtest.co  --token 0x3eE243ff68074502b1D9D65443fa97b99f634570 --wallet 0xD5f92Fd92F8c7f9391513E3019D9441aAf5b2D9E
     
 # ERC20代币Approve授权
-web3-tools erc20Approve --key 88efa0c968693a034301450d450c7169b3f608966977a4e3b5b0672cb82c597e --chainId 698 --spender 0x20142400c97AD2c0A74d4C0400e482a973087033  --rpc https://lisbon-testnet-rpc.matchtest.co  --token 0x3eE243ff68074502b1D9D65443fa97b99f634570 --wallet 0xD5f92Fd92F8c7f9391513E3019D9441aAf5b2D9E --amount 100
+web3-tools erc20Approve --rpc https://lisbon-testnet-rpc.matchtest.co --chainId 698 --token 0x3eE243ff68074502b1D9D65443fa97b99f634570 --key 0x88efa0c968693a034301450d450c7169b3f608966977a4e3b5b0672cb82c597e --spender 0x7D05883B19cD14c216AD82222c48bCD4eE98914c --amount 10000
+    
+# 查询ERC20代币Allowance
+web3-tools erc20Approve erc20Allowance --rpc https://lisbon-testnet-rpc.matchtest.co  --token 0x3eE243ff68074502b1D9D65443fa97b99f634570 --owner 0x360C815e8C5F130913113801D0c57611Ee95723A  --spender 0x7D05883B19cD14c216AD82222c48bCD4eE98914c
+
 
 
 ```
