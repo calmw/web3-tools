@@ -4,7 +4,8 @@
 
 #### 安装
 
-- 1 如果有go运行环境 ``` go install github.com/calmw/web3-tools@v0.0.2 ```
+- 如果有go运行环境，将GOPATH下的bin目录加入环境变量
+    - 执行``` go install github.com/calmw/web3-tools@v0.0.3 ```
 
 #### 使用
 
