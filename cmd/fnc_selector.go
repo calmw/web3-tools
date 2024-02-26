@@ -15,7 +15,7 @@ import (
 // getFnSelectorCmd represents the getFnSelector command
 var getFnSelectorCmd = &cobra.Command{
 	Use:   "getFnSelector",
-	Short: "获取函数选择器16进制值",
+	Short: "获取函数选择器,返回16进制字符串",
 	Long: `根据函数签名获取函数选择器16进制值. 例子:
 web3-tools getFnSelector 'adminSetClaimType(uint256,uint256)'`,
 	Run: func(cmd *cobra.Command, args []string) {

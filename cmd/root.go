@@ -28,13 +28,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var RPC, token, wallet, spender, privateKey string
+var chainId, amount int64
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "web3-tools",
 	Short: "一个web3 辅助工具",
 	Long: `web3开发者的辅助工具. 例如:
 
-生成函数选择器`,
+生成函数选择器
+对字符串进行keccak256加密
+`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -55,5 +60,5 @@ func init() {
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

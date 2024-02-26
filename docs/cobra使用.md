@@ -14,3 +14,9 @@ cobra-cli add create -p 'configCmd'  # go run main.go config create
 ```
 
 - 修改父命令的信息，在root.go
+
+#### 开发注意事项
+
+- cmd中命令的 init flag 定义一次即可，多个文件中重复定义会报错
+- erc20BalanceCmd.Flags()           // 全局有效
+  erc20ApproveCmd.PersistentFlags() // 当前命令有效

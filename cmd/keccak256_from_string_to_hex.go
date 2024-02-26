@@ -15,7 +15,7 @@ import (
 // keccak256FromStringToHexCmd represents the keccak256FromStringToHex command
 var keccak256FromStringToHexCmd = &cobra.Command{
 	Use:   "keccak256FromStringToHex",
-	Short: "对字符串进行keccak256加密",
+	Short: "对字符串进行keccak256加密，返回16进制字符串",
 	Long: `对字符串进行keccak256加密，返回16进制字符串. 例子:
 web3-tools keccak256FromStringToHex 'some string'`,
 	Run: func(cmd *cobra.Command, args []string) {
