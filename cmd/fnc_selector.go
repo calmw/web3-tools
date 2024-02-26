@@ -17,7 +17,7 @@ var getFnSelectorCmd = &cobra.Command{
 	Use:   "getFnSelector",
 	Short: "获取函数选择器16进制值",
 	Long: `根据函数签名获取函数选择器16进制值. 例子:
-web3-tools getFnSelector adminSetClaimType(uint256,uint256)`,
+web3-tools getFnSelector 'adminSetClaimType(uint256,uint256)'`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Printf("%-25s%s\n", "函数签名:", " "+args[0])
 		fmt.Printf("%-25s%s\n", "函数选择器:", "0x"+strings.ToLower(hexutils.BytesToHex(crypto.Keccak256([]byte(args[0]))[:4])))
