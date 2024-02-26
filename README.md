@@ -24,8 +24,8 @@ web3-tools keccak256FromStringToHex 'some string'
 # 获取ERC20代币余额
 web3-tools  erc20Balance --rpc https://lisbon-testnet-rpc.matchtest.co  --token 0x3eE243ff68074502b1D9D65443fa97b99f634570 --wallet 0xD5f92Fd92F8c7f9391513E3019D9441aAf5b2D9E
     
-# Approve授权
-web3-tools  --key 88efa0c968693a034301450d450c7169b3f608966977a4e3b5b0672cb82c597e --chainId 698 --spender 0x20142400c97AD2c0A74d4C0400e482a973087033  --rpc https://lisbon-testnet-rpc.matchtest.co  --token 0x3eE243ff68074502b1D9D65443fa97b99f634570 --wallet 0xD5f92Fd92F8c7f9391513E3019D9441aAf5b2D9E --amount 100
+# ERC20代币Approve授权
+web3-tools erc20Approve --key 88efa0c968693a034301450d450c7169b3f608966977a4e3b5b0672cb82c597e --chainId 698 --spender 0x20142400c97AD2c0A74d4C0400e482a973087033  --rpc https://lisbon-testnet-rpc.matchtest.co  --token 0x3eE243ff68074502b1D9D65443fa97b99f634570 --wallet 0xD5f92Fd92F8c7f9391513E3019D9441aAf5b2D9E --amount 100
 
 
 ```
