@@ -14,8 +14,8 @@
     wget https://github.com/calmw/web3-tools/releases/download/v0.0.4/web3-tools_amd64
     ln -s web3-tools_amd64 /usr/local/bin/web3
     # Apple 
-    wget https://github.com/calmw/web3-tools/blob/main/release/mac_arm64/web3-tools
-    ln -s web3-tools_amd64 /usr/local/bin/web3
+    wget https://github.com/calmw/web3-tools/releases/download/v0.0.4/web3-tools_arm64
+    ln -s web3-tools_arm64 /usr/local/bin/web3
 ```
 
   - windows
