@@ -35,7 +35,7 @@ web3-tools erc20Allowance --rpc https://lisbon-testnet-rpc.matchtest.co  --token
 web3-tools erc20Transfer --rpc https://lisbon-testnet-rpc.matchtest.co --chainId 698 --token 0x3eE243ff68074502b1D9D65443fa97b99f634570 --key 0x88efa0c968693a034301450d450c7169b3f608966977a4e3b5b0672cb82c597e --to 0xD5f92Fd92F8c7f9391513E3019D9441aAf5b2D9E --transferAmount 1
 
 # 获取ETH/native coin 余额
-web3-tools web3-tools ethBalance --rpc https://lisbon-testnet-rpc.matchtest.co  --wallet 0xD5f92Fd92F8c7f9391513E3019D9441aAf5b2D9E
+web3-tools ethBalance --rpc https://lisbon-testnet-rpc.matchtest.co  --wallet 0xD5f92Fd92F8c7f9391513E3019D9441aAf5b2D9E
 
 
 
