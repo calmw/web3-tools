@@ -28,7 +28,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var RPC, token, funcSig, someStr, wallet, owner, spender, privateKey string
+var RPC, token, funcSig, someStr, wallet, owner, spender, privateKey, to, transferAmount string
 var chainId, amount int64
 
 // rootCmd represents the base command when called without any subcommands

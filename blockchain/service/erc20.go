@@ -1,15 +1,13 @@
 package service
 
 import (
-	"context"
 	erc20 "github.com/calmw/web3-tools/blockchain/bindding/token"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"math"
 	"math/big"
+	"strconv"
 )
 
 type Erc20 struct {
@@ -24,38 +22,6 @@ func NewErc20(cli *ethclient.Client, erc20Token string) *Erc20 {
 		Cli:      cli,
 		Contract: token,
 	}
-}
-
-func Client(Rpc string) (error, *ethclient.Client) {
-	client, err := ethclient.Dial(Rpc)
-	if err != nil {
-		return err, nil
-	}
-	return nil, client
-}
-
-func GetAuth(cli *ethclient.Client, priKey string, chainId int64) (*bind.TransactOpts, error) {
-	privateKeyEcdsa, err := crypto.HexToECDSA(priKey)
-	if err != nil {
-		return nil, err
-	}
-	auth, err := bind.NewKeyedTransactorWithChainID(privateKeyEcdsa, big.NewInt(chainId))
-	if err != nil {
-		return nil, err
-	}
-
-	return &bind.TransactOpts{
-		From:      auth.From,
-		Nonce:     nil,
-		Signer:    auth.Signer,
-		Value:     big.NewInt(0),
-		GasPrice:  nil,
-		GasFeeCap: nil,
-		GasTipCap: nil,
-		GasLimit:  0,
-		Context:   context.Background(),
-		NoSend:    false,
-	}, nil
 }
 
 func (e Erc20) BalanceOf(wallet string) (*big.Int, error) {
@@ -84,6 +50,26 @@ func (e Erc20) Approve(cli *ethclient.Client, chainId int64, priKey, spender str
 }
 
 func (e Erc20) Allowance(owner, spender string) (*big.Int, error) {
-
 	return e.Contract.Allowance(nil, common.HexToAddress(owner), common.HexToAddress(spender))
+}
+
+func (e Erc20) Transfer(cli *ethclient.Client, chainId int64, priKey, to string, amount string) (*types.Transaction, error) {
+	auth, err := GetAuth(cli, priKey, chainId)
+	if err != nil {
+		return nil, err
+	}
+
+	f, err := strconv.ParseFloat(amount, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	decimals, err := e.Decimals()
+	if err != nil {
+		return nil, err
+	}
+
+	amountBigInt := big.NewInt(int64(math.Pow(10, float64(decimals)) * f))
+
+	return e.Contract.Transfer(auth, common.HexToAddress(to), amountBigInt)
 }
