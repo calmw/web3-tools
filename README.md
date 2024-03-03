@@ -26,4 +26,5 @@
 - 函数选择器，Keccak256加密, [函数选择器,Keccak256加密使用手册](./docs/usage/sign_fn_selector.md)
 - ERC20手册: [ERC20手册](./docs/usage/erc20.md)
 - Native Coin(ETH)使用手册:[Native Coin使用手册](./docs/usage/native_coin.md)
+- Hardhat增强工具：[Native Coin使用手册](./docs/usage/hardhat_tools.md)
 

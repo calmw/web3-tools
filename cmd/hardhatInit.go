@@ -75,6 +75,15 @@ type Package struct {
 	} `json:"dependencies"`
 }
 
+type Contract struct {
+	ContractName string
+	FuncMap      map[string]func()
+	SelectorFunc map[string]string   // selector=>funcName
+	FuncSelector map[string]string   // funcName=>selector
+	FuncPara     map[string][]string // 参数类型和数量，函数名称(合约名+函数名) => [address,uint256]
+	FuncReturn   map[string][]string // 函数返回值类型和数量，函数名称(合约名+函数名) => [address,uint256]
+}
+
 func newHardhat() *Hardhat {
 	return &Hardhat{
 		ContractName: make([]string, 0),
@@ -156,6 +165,22 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// hardhatInitCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func (h *Hardhat) getProjectName() error {
+	file, err := os.ReadFile("./package.json")
+	if err != nil {
+		return fmt.Errorf("读取package.json失败，error:%v", err)
+	}
+	var pkg Package
+	err = json.Unmarshal(file, &pkg)
+	if err != nil {
+		return fmt.Errorf("解析package.json失败，error:%v", err)
+	}
+
+	h.ProjectName = formatPkgName(pkg.Name)
+
+	return nil
 }
 
 func (h *Hardhat) genericAbiAndBin() {
@@ -250,20 +275,39 @@ func (h *Hardhat) genericAbiBind() {
 	}
 }
 
-func (h *Hardhat) getProjectName() error {
-	file, err := os.ReadFile("./package.json")
+func (h *Hardhat) genericContractDataFromAbi() ([]Contract, error) {
+	var contracts []Contract
+	dirEntries, err := os.ReadDir("./web3-tools/abi")
 	if err != nil {
-		return fmt.Errorf("读取package.json失败，error:%v", err)
+		return nil, fmt.Errorf("读取web3-tools/abi目录下ABI文件失败，error:%v", err)
 	}
-	var pkg Package
-	err = json.Unmarshal(file, &pkg)
-	if err != nil {
-		return fmt.Errorf("解析package.json失败，error:%v", err)
+	for _, entry := range dirEntries {
+		abiBytes, err := os.ReadFile(fmt.Sprintf("./web3-tools/abi/%s", entry.Name()))
+		if err != nil {
+			return nil, fmt.Errorf("读取web3-tools/abi目录下ABI文件失败，error:%v", err)
+		}
+
+		var abi ABI
+		err = json.Unmarshal(abiBytes, &abi)
+		if err != nil {
+			return nil, fmt.Errorf("解码web3-tools/abi目录下ABI文件失败，error:%v", err)
+		}
+		contract := Contract{
+			ContractName: "",
+			FuncMap:      nil,
+			SelectorFunc: nil,
+			FuncSelector: nil,
+			FuncPara:     nil,
+			FuncReturn:   nil,
+		}
+		contract.ContractName = abi.ContractName
+		for _, abi_ := range abi.Abi {
+			if abi_.Type == "function" {
+				contract
+			}
+		}
 	}
 
-	h.ProjectName = formatPkgName(pkg.Name)
-
-	return nil
 }
 
 func formatPkgName(pkgName string) string {
