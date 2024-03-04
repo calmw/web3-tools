@@ -3,7 +3,7 @@ module github.com/calmw/web3-tools
 go 1.21.6
 
 require (
-	github.com/ethereum/go-ethereum v1.13.13
+	github.com/ethereum/go-ethereum v1.13.14
 	github.com/spf13/cobra v1.8.0
 	github.com/status-im/keycard-go v0.3.2
 )
