@@ -27,15 +27,5 @@ web3-tools keccak256FromStringToHex --someStr "some string"`,
 func init() {
 	rootCmd.AddCommand(keccak256FromStringToHexCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// keccak256FromStringToHexCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// keccak256FromStringToHexCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-
 	keccak256FromStringToHexCmd.PersistentFlags().StringVarP(&someStr, "someStr", "s", "", "字符串")
 }

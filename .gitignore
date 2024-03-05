@@ -24,3 +24,4 @@ go.work
 package.json
 contracts
 artifacts
+web3-tools

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/spf13/cobra"
 	"os"
 	"regexp"
@@ -76,12 +77,17 @@ type Package struct {
 }
 
 type Contract struct {
-	ContractName string
-	FuncMap      map[string]func()
-	SelectorFunc map[string]string   // selector=>funcName
-	FuncSelector map[string]string   // funcName=>selector
-	FuncPara     map[string][]string // 参数类型和数量，函数名称(合约名+函数名) => [address,uint256]
-	FuncReturn   map[string][]string // 函数返回值类型和数量，函数名称(合约名+函数名) => [address,uint256]
+	ContractName    string
+	FuncMap         map[string]ContractFunc // function name=>ContractFunc
+	SelectorFuncMap map[string]ContractFunc // selector=>ContractFunc
+}
+
+type ContractFunc struct {
+	FuncName   string
+	Sig        string
+	Para       []string
+	FuncReturn []interface{}
+	Selector   string
 }
 
 func newHardhat() *Hardhat {
@@ -148,8 +154,22 @@ web3-tools hardhatInit`,
 			return
 		}
 
-		hardhat.genericAbiAndBin()
-		hardhat.genericAbiBind()
+		err = hardhat.genericAbiAndBin()
+		if err != nil {
+			fmt.Println(err)
+			return
+		} // 生成ABI和BIN文件
+		err = hardhat.genericGoBinding()
+		if err != nil {
+			fmt.Println(err)
+			return
+		} // 生成GO的绑定文件
+		err = hardhat.genericContractDataAndSaveToDB()
+		if err != nil {
+			fmt.Println(err)
+			return
+		} // 将合约数据存入数据库
+
 	},
 }
 
@@ -183,73 +203,84 @@ func (h *Hardhat) getProjectName() error {
 	return nil
 }
 
-func (h *Hardhat) genericAbiAndBin() {
+func (h *Hardhat) genericAbiAndBin() error {
 	dirEntries, err := os.ReadDir("./artifacts/contracts")
 	if err != nil {
-		fmt.Println("读取artifacts目录下ABI失败，error:", err)
-		return
+		return fmt.Errorf("读取artifacts目录下ABI目录失败，error:%v", err)
 	}
 
 	for _, entry := range dirEntries {
 		entryName := entry.Name()
-		fileNameWithoutSuffix, found := strings.CutSuffix(entryName, ".sol")
-		if found {
+		if !strings.HasSuffix(entryName, ".sol") || !entry.IsDir() {
+			continue
+		}
+		entries, err := os.ReadDir(fmt.Sprintf("./artifacts/contracts/%s", entryName))
+		if err != nil {
+			return fmt.Errorf("读取artifacts目录下ABI失败，error:%v", err)
+		}
+		for _, et := range entries {
+			if et.IsDir() {
+				continue
+			}
+			fileName := et.Name()
+			if strings.HasSuffix(fileName, ".dbg.json") {
+				continue
+			}
+			_, found := strings.CutSuffix(fileName, ".json")
+			if !found {
+				continue
+			}
 			// 读取hardhat生成的ABI Json文件
-			abiFile := fmt.Sprintf("./artifacts/contracts/%s/%s.json", entryName, fileNameWithoutSuffix)
+			abiFile := fmt.Sprintf("./artifacts/contracts/%s/%s", entryName, fileName)
+			fmt.Println(abiFile)
 			abiFileBytes, err := os.ReadFile(abiFile)
 			if err != nil {
-				fmt.Println("读取ABI文件失败，error:", err)
-				return
+				return fmt.Errorf("读取ABI文件失败，error:%v", err)
 			}
 			var abi ABI
 			err = json.Unmarshal(abiFileBytes, &abi)
 			if err != nil {
-				fmt.Println("解析ABI文件失败，error:", err)
-				return
+				return fmt.Errorf("解析ABI文件失败，error:%v", err)
 			}
 			// 添加合约名称
 			h.ContractName = append(h.ContractName, abi.ContractName)
 			// 生成新的ABI文件
 			abiBytes, err := json.Marshal(abi.Abi)
 			if err != nil {
-				fmt.Println("编码ABI文件失败，error:", err)
+				return fmt.Errorf("编码ABI文件失败，error:%v", err)
 			}
 			//生成json文件
 			newAbiFile := fmt.Sprintf("./web3-tools/abi/%s.json", abi.ContractName)
 			err = os.WriteFile(newAbiFile, abiBytes, os.ModePerm)
 			if err != nil {
-				fmt.Println("生成ABI文件失败，error:", err)
-				return
+				return fmt.Errorf("生成ABI文件失败，error:%v", err)
 			}
 			// 生成新的BIN文件
 			byteCodeBytes, err := json.Marshal(abi.Bytecode)
 			if err != nil {
-				fmt.Println("编码BIN文件失败，error:", err)
+				return fmt.Errorf("编码BIN文件失败，error:%v", err)
 			}
 			//生成bin文件
 			newBinFile := fmt.Sprintf("./web3-tools/bin/%s.bin", abi.ContractName)
 			err = os.WriteFile(newBinFile, byteCodeBytes, os.ModePerm)
 			if err != nil {
-				fmt.Println("生成BIN文件失败，error:", err)
-				return
+				return fmt.Errorf("生成BIN文件失败，error:%v", err)
 			}
-		} else {
-			continue
 		}
 	}
+
+	return nil
 }
 
-func (h *Hardhat) genericAbiBind() {
+func (h *Hardhat) genericGoBinding() error {
 	dirEntries, err := os.ReadDir("./web3-tools/abi")
 	if err != nil {
-		fmt.Println("读取web3-tools/abi目录下ABI文件失败，error:", err)
-		return
+		return fmt.Errorf("读取web3-tools/abi目录下ABI文件失败，error:%v", err)
 	}
 	bindingDir := fmt.Sprintf("./web3-tools/binding/%s", h.ProjectName)
 	err = os.MkdirAll(bindingDir, os.ModePerm)
 	if err != nil {
-		fmt.Println("创建binding文件夹出错，error:", err)
-		return
+		return fmt.Errorf("创建binding文件夹出错，error:%v", err)
 	}
 
 	for _, entry := range dirEntries {
@@ -265,57 +296,76 @@ func (h *Hardhat) genericAbiBind() {
 
 			err = genericGoBinding(abiFileName, binFileName, h.ProjectName, typeName, outFileName)
 			if err != nil {
-				fmt.Println("生成go绑定文件失败，error:", err)
-				return
+				return fmt.Errorf("生成go绑定文件失败，error:%v", err)
 			}
-
 		} else {
 			continue
 		}
 	}
+	return nil
 }
 
-func (h *Hardhat) genericContractDataFromAbi() ([]Contract, error) {
-	var contracts []Contract
+func (h *Hardhat) genericContractDataAndSaveToDB() error {
+	var contractsMap = map[string]Contract{} // contract name => Contract
 	dirEntries, err := os.ReadDir("./web3-tools/abi")
 	if err != nil {
-		return nil, fmt.Errorf("读取web3-tools/abi目录下ABI文件失败，error:%v", err)
+		return fmt.Errorf("读取web3-tools/abi目录下ABI文件失败，error:%v", err)
 	}
 	for _, entry := range dirEntries {
 		abiBytes, err := os.ReadFile(fmt.Sprintf("./web3-tools/abi/%s", entry.Name()))
 		if err != nil {
-			return nil, fmt.Errorf("读取web3-tools/abi目录下ABI文件失败，error:%v", err)
+			return fmt.Errorf("读取web3-tools/abi目录下ABI文件失败，error:%v", err)
 		}
 
 		var abi ABI
-		err = json.Unmarshal(abiBytes, &abi)
+		err = json.Unmarshal(abiBytes, &abi.Abi)
 		if err != nil {
-			return nil, fmt.Errorf("解码web3-tools/abi目录下ABI文件失败，error:%v", err)
+			fmt.Println(fmt.Sprintf("./web3-tools/abi/%s", entry.Name()))
+			return fmt.Errorf("解码web3-tools/abi目录下ABI文件失败，error:%v", err)
 		}
 		contract := Contract{
-			ContractName: "",
-			FuncMap:      nil,
-			SelectorFunc: nil,
-			FuncSelector: nil,
-			FuncPara:     nil,
-			FuncReturn:   nil,
+			FuncMap:         map[string]ContractFunc{},
+			SelectorFuncMap: map[string]ContractFunc{},
 		}
 		contract.ContractName = abi.ContractName
 		for _, abi_ := range abi.Abi {
 			if abi_.Type == "function" {
-				contract
+				contractFunc := ContractFunc{}
+				contractFunc.FuncName = abi_.Name
+				sig := fmt.Sprintf("%s(" + abi_.Name)
+				for _, input := range abi_.Inputs {
+					sig += input.InternalType + ","
+					contractFunc.Para = append(contractFunc.Para, input.InternalType)
+				}
+				sig = strings.TrimSuffix(sig, ",")
+				sig += ")"
+				contractFunc.Sig = sig
+
+				for _, output := range abi_.Outputs {
+					contractFunc.FuncReturn = append(contractFunc.FuncReturn, output)
+				}
+
+				contractFunc.Selector = string(crypto.Keccak256([]byte(sig))[:4])
+				contract.SelectorFuncMap[contractFunc.Selector] = contractFunc
+				contract.FuncMap[contractFunc.FuncName] = contractFunc
 			}
 		}
+		contractsMap[contract.ContractName] = contract
 	}
 
+	contractBytes, err := json.Marshal(contractsMap)
+	if err != nil {
+		return err
+	}
+	//
+	err = FDB.Put([]byte("contracts"), contractBytes)
+	if err != nil {
+		return fmt.Errorf("内部错误：%v", err)
+	}
+
+	return nil
 }
 
-func formatPkgName(pkgName string) string {
-	var nonAlphanumericRegex = regexp.MustCompile(`[^a-zA-Z]+`)
-	return nonAlphanumericRegex.ReplaceAllString(pkgName, "")
-}
-
-// Generate the contract binding
 func genericGoBinding(abiFile, binFile, pkgName, typeName, outFileName string) error {
 	var abis []string
 	var bins []string
@@ -339,4 +389,9 @@ func genericGoBinding(abiFile, binFile, pkgName, typeName, outFileName string) e
 	}
 
 	return nil
+}
+
+func formatPkgName(pkgName string) string {
+	var nonAlphanumericRegex = regexp.MustCompile(`[^a-zA-Z]+`)
+	return nonAlphanumericRegex.ReplaceAllString(pkgName, "")
 }
