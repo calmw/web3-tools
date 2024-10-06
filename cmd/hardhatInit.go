@@ -6,9 +6,11 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/calmw/fdb"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/spf13/cobra"
+	"github.com/status-im/keycard-go/hexutils"
 	"os"
 	"regexp"
 	"strings"
@@ -19,7 +21,7 @@ type Hardhat struct {
 	ContractName []string // contracts目录下所有合约的名称
 }
 
-type ABI struct {
+type HardHatABI struct {
 	Format       string `json:"_format"`
 	ContractName string `json:"contractName"`
 	SourceName   string `json:"sourceName"`
@@ -78,6 +80,7 @@ type Package struct {
 
 type Contract struct {
 	ContractName    string
+	Abi             []byte
 	FuncMap         map[string]ContractFunc // function name=>ContractFunc
 	SelectorFuncMap map[string]ContractFunc // selector=>ContractFunc
 }
@@ -104,7 +107,24 @@ var hardhatInitCmd = &cobra.Command{
 
 web3-tools hardhatInit`,
 	Run: func(cmd *cobra.Command, args []string) {
+		///初始化DB
+		opts := fdb.DefaultOption
+		opts.DirPath = "./web3-tools/fdb"
+		err := os.RemoveAll("./web3-tools")
+		if err != nil {
+			panic(err)
+		}
+		db, err := fdb.Open(opts)
+		if err != nil {
+			panic(err)
+		}
+		FDB = db
 		// 判断当前是否在hardhat根目录
+		_, err = os.Create("./web3-tools/contract.json")
+		if err != nil {
+			panic(err)
+		}
+
 		pwd, _ := os.Getwd()
 		var isContractsDirExist bool
 		var isArtifactsDirExist bool
@@ -176,15 +196,6 @@ web3-tools hardhatInit`,
 func init() {
 	rootCmd.AddCommand(hardhatInitCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// hardhatInitCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// hardhatInitCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func (h *Hardhat) getProjectName() error {
@@ -232,12 +243,11 @@ func (h *Hardhat) genericAbiAndBin() error {
 			}
 			// 读取hardhat生成的ABI Json文件
 			abiFile := fmt.Sprintf("./artifacts/contracts/%s/%s", entryName, fileName)
-			fmt.Println(abiFile)
 			abiFileBytes, err := os.ReadFile(abiFile)
 			if err != nil {
 				return fmt.Errorf("读取ABI文件失败，error:%v", err)
 			}
-			var abi ABI
+			var abi HardHatABI
 			err = json.Unmarshal(abiFileBytes, &abi)
 			if err != nil {
 				return fmt.Errorf("解析ABI文件失败，error:%v", err)
@@ -317,35 +327,38 @@ func (h *Hardhat) genericContractDataAndSaveToDB() error {
 			return fmt.Errorf("读取web3-tools/abi目录下ABI文件失败，error:%v", err)
 		}
 
-		var abi ABI
+		var abi HardHatABI
 		err = json.Unmarshal(abiBytes, &abi.Abi)
 		if err != nil {
-			fmt.Println(fmt.Sprintf("./web3-tools/abi/%s", entry.Name()))
 			return fmt.Errorf("解码web3-tools/abi目录下ABI文件失败，error:%v", err)
 		}
 		contract := Contract{
 			FuncMap:         map[string]ContractFunc{},
 			SelectorFuncMap: map[string]ContractFunc{},
 		}
-		contract.ContractName = abi.ContractName
+		contractName_, _ := strings.CutSuffix(entry.Name(), ".json")
+		contract.Abi = abiBytes
+		contract.ContractName = contractName_
 		for _, abi_ := range abi.Abi {
 			if abi_.Type == "function" {
 				contractFunc := ContractFunc{}
 				contractFunc.FuncName = abi_.Name
-				sig := fmt.Sprintf("%s(" + abi_.Name)
+				sig := abi_.Name + "("
 				for _, input := range abi_.Inputs {
 					sig += input.InternalType + ","
 					contractFunc.Para = append(contractFunc.Para, input.InternalType)
 				}
 				sig = strings.TrimSuffix(sig, ",")
 				sig += ")"
+				fmt.Println(sig)
 				contractFunc.Sig = sig
 
 				for _, output := range abi_.Outputs {
 					contractFunc.FuncReturn = append(contractFunc.FuncReturn, output)
 				}
 
-				contractFunc.Selector = string(crypto.Keccak256([]byte(sig))[:4])
+				contractFunc.Selector = "0x" + strings.ToLower(hexutils.BytesToHex(crypto.Keccak256([]byte(sig))[:4]))
+				fmt.Println("0x" + strings.ToLower(hexutils.BytesToHex(crypto.Keccak256([]byte(sig))[:4])))
 				contract.SelectorFuncMap[contractFunc.Selector] = contractFunc
 				contract.FuncMap[contractFunc.FuncName] = contractFunc
 			}
@@ -361,6 +374,11 @@ func (h *Hardhat) genericContractDataAndSaveToDB() error {
 	err = FDB.Put([]byte("contracts"), contractBytes)
 	if err != nil {
 		return fmt.Errorf("内部错误：%v", err)
+	}
+
+	err = os.WriteFile("./web3-tools/contract.json", contractBytes, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("生成contract.json error：%v", err)
 	}
 
 	return nil
@@ -381,11 +399,11 @@ func genericGoBinding(abiFile, binFile, pkgName, typeName, outFileName string) e
 	types = append(types, typeName)
 	code, err := bind.Bind(types, abis, bins, sigs, pkgName, bind.LangGo, libs, aliases)
 	if err != nil {
-		return fmt.Errorf("failed to generate ABI binding: %v", err)
+		return fmt.Errorf("failed to generate HardHatABI binding: %v", err)
 	}
 
 	if err := os.WriteFile(outFileName, []byte(code), 0600); err != nil {
-		return fmt.Errorf("failed to write ABI binding: %v", err)
+		return fmt.Errorf("failed to write HardHatABI binding: %v", err)
 	}
 
 	return nil

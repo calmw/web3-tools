@@ -23,14 +23,12 @@ web3-tools setConfig match_test --rpc https://lisbon-testnet-rpc.matchtest.co --
 
 		// 获取配置
 		data, err := FDB.Get([]byte("config"))
-		if err != nil {
-			fmt.Println("获取配置错误", err)
-			return
-		}
-		err = json.Unmarshal(data, &configs)
-		if err != nil {
-			fmt.Println("提取配置错误", err)
-			return
+		if err == nil {
+			err = json.Unmarshal(data, &configs)
+			if err != nil {
+				fmt.Println("提取配置错误", err)
+				return
+			}
 		}
 
 		// 设置配置

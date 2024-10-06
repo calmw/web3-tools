@@ -36,7 +36,8 @@ type Config struct {
 	PrivateKey string
 }
 
-var RPC, token, funcSig, someStr, wallet, owner, spender, privateKey, to, transferAmount, configName string
+// var RPC, token, funcSig, someStr, wallet, owner, spender, privateKey, to, transferAmount, configName, contractName, contractAddress, functionName, functionPara string
+var RPC, token, funcSig, someStr, wallet, owner, spender, privateKey, to, transferAmount, configName, contractName, contractAddress, functionName, ethNum string
 var chainId, amount int64
 var FDB *fdb.DB
 
